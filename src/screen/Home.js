@@ -1,4 +1,11 @@
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Image,
+} from 'react-native';
 import React, {useEffect, useState, useCallback} from 'react';
 import {wp, hp} from '../util/services';
 import Slider from '@react-native-community/slider';
@@ -22,15 +29,17 @@ const Home = () => {
       value: 365,
     },
   ];
-  const minAmount = 500;
-  const maxAmount = 5000000000;
-  const minYear = 1;
-  const maxYear = 12;
+  const minAmount = 0;
+  const maxAmount = 21000;
+  const minYear = 0;
+  const maxYear = 10;
+  let amountArr = [0, 0, 0, 0, 0, 0, 0, 0];
+  let timeArr = [0, 0, 0, 0, 0, 0];
   const [allPools, setAllPools] = useState([]);
-  const [amount, setAmount] = useState(minAmount);
+  const [amount, setAmount] = useState(7000);
   const [poolResult, setPoolResult] = useState(null);
-  const [time, setTime] = useState(minYear);
-  const [selectedPoolId, setSelectedPoolId] = useState('');
+  const [time, setTime] = useState(3);
+  const [selectedPoolId, setSelectedPoolId] = useState(11);
   const [loader, setLoader] = useState(false);
   const [selectedTab, setSelectedTab] = useState(TabArr[0].value);
 
@@ -92,7 +101,7 @@ const Home = () => {
       })
       .catch(error => {
         setPoolResult(null);
-        showAlert(error?.message);
+        showAlert('No result found');
         console.log('error', error);
       })
       .finally(() => {
@@ -140,12 +149,19 @@ const Home = () => {
         <View style={styles.amountView}>
           <View style={styles.amountViewTop}>
             <Text style={styles.fieldTitle}>Invested Amount</Text>
-            <View style={styles.grayView}>
-              <Text style={styles.grayViewText}>{formatedAmount(amount)}</Text>
-            </View>
+            <TextInput
+              style={styles.grayTextInput}
+              value={amount.toString()}
+              onChangeText={text => {
+                if (text >= 0 && text < maxAmount) {
+                  setAmount(text);
+                }
+              }}
+              keyboardType="number-pad"
+            />
           </View>
           <Slider
-            value={amount}
+            value={parseFloat(amount) || 0}
             onValueChange={valueData => setAmount(parseInt(valueData, 10))}
             thumbTintColor="#304FFE"
             minimumTrackTintColor="#304FFE"
@@ -155,12 +171,14 @@ const Home = () => {
             style={styles.sliderStyle}
           />
           <View style={styles.sliderLableView}>
-            <Text style={styles.sliderLableText}>
-              Min : {formatedAmount(minAmount)}
-            </Text>
-            <Text style={styles.sliderLableText}>
-              Max : {formatedAmount(maxAmount)}
-            </Text>
+            {amountArr.map((item, ind) => {
+              let itemAmount = maxAmount * (ind / 7);
+              return (
+                <Text style={styles.sliderLableText}>
+                  {formatedAmount(itemAmount)}
+                </Text>
+              );
+            })}
           </View>
         </View>
         {/* //------Amount Slider end------// */}
@@ -202,11 +220,11 @@ const Home = () => {
         <View style={styles.investedFromView}>
           <View style={styles.investedFromViewTop}>
             <Text style={styles.fieldTitle}>Invested From</Text>
-            <View style={styles.grayView}>
-              <Text style={styles.grayViewText}>
-                {time} {time > 1 ? 'yrs' : 'yr'}
-              </Text>
-            </View>
+            <TextInput
+              style={styles.grayTextInput}
+              value={time.toString() + (time > 1 ? ' yrs' : ' yr')}
+              editable={false}
+            />
           </View>
           <Slider
             value={time}
@@ -219,10 +237,16 @@ const Home = () => {
             style={styles.sliderStyle}
           />
           <View style={styles.sliderLableView}>
-            <Text style={styles.sliderLableText}>
-              Min : {minYear} {minYear > 1 ? 'yrs' : 'yr'}
-            </Text>
-            <Text style={styles.sliderLableText}>Max : {maxYear} yrs</Text>
+            {timeArr.map((item, ind) => {
+              let itemAmount = maxYear * (ind / 5);
+              return (
+                <Text style={[styles.sliderLableText, styles.w14]}>
+                  {itemAmount === 0
+                    ? 'Present'
+                    : formatedAmount(itemAmount) + ' yrs'}
+                </Text>
+              );
+            })}
           </View>
         </View>
         {/* //------Invested From end------// */}
@@ -241,18 +265,45 @@ const Home = () => {
                 {poolResult
                   ? poolResult?.resultData &&
                     poolResult?.resultData.at(-1).investedAmount
-                  : '0.00'}
+                  : '0.00'}{' '}
+                USDT
               </Text>
               <Text style={[styles.resultTextTwo, styles.textMT]}>
                 {poolResult
                   ? poolResult?.resultData &&
-                    poolResult?.resultData.at(-1).worthNowInUSD
-                  : '0.00'}
+                    parseFloat(
+                      poolResult?.resultData.at(-1).worthNowInUSD,
+                    ).toFixed(2)
+                  : '0.00'}{' '}
+                USDT
               </Text>
             </View>
           </View>
-          <View style={styles.perView}>
-            <Text style={styles.perText}>
+          <View
+            style={[
+              styles.perView,
+              poolResult && poolResult?.absoluteReturns < 0
+                ? styles.redBgcolor
+                : {},
+            ]}>
+            {poolResult && poolResult?.absoluteReturns > 0 ? (
+              <Image
+                style={styles.icon}
+                source={require('../assets/images/topGreen.png')}
+              />
+            ) : poolResult && poolResult?.absoluteReturns < 0 ? (
+              <Image
+                style={[styles.icon, styles.tintRed]}
+                source={require('../assets/images/bottomArrow.png')}
+              />
+            ) : null}
+            <Text
+              style={[
+                styles.perText,
+                poolResult && poolResult?.absoluteReturns < 0
+                  ? styles.redcolor
+                  : {},
+              ]}>
               {poolResult ? poolResult?.absoluteReturns + '%' : '0%'}
             </Text>
           </View>
@@ -301,19 +352,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  grayView: {
+  grayTextInput: {
     backgroundColor: '#F3F3F3',
+    padding: 0,
     height: hp(3.5),
     paddingHorizontal: wp(3),
     borderRadius: wp(5),
-    justifyContent: 'center',
-    alignItems: 'center',
     minWidth: wp(18),
-  },
-  grayViewText: {
     fontSize: wp(3),
     color: '#252A48',
     fontFamily: 'DMSans-Bold',
+    textAlign: 'center',
   },
   sliderLableView: {
     flexDirection: 'row',
@@ -321,9 +370,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sliderLableText: {
-    fontSize: wp(3.5),
-    color: '#252A48',
+    fontSize: wp(3.8),
+    color: '#000000',
     fontFamily: 'DMSans-Medium',
+    textAlign: 'center',
+    width: wp(11),
+  },
+  w14: {
+    width: wp(14),
   },
   investedInView: {
     flexDirection: 'row',
@@ -434,11 +488,20 @@ const styles = StyleSheet.create({
     borderRadius: wp(2),
     alignSelf: 'flex-end',
     marginTop: hp(1),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   perText: {
     fontSize: wp(3.4),
     fontFamily: 'DMSans-Regular',
     color: '#2BA24C',
+  },
+  redBgcolor: {
+    backgroundColor: '#fa9b9b',
+  },
+  redcolor: {
+    color: 'red',
   },
   btnView: {
     backgroundColor: '#304FFE',
@@ -457,4 +520,11 @@ const styles = StyleSheet.create({
   sliderStyle: {
     marginVertical: hp(1),
   },
+  icon: {
+    height: wp(2.5),
+    width: wp(2.3),
+    marginRight: wp(2),
+    resizeMode: 'contain',
+  },
+  tintRed: {tintColor: 'red'},
 });

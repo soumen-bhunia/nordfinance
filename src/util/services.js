@@ -10,13 +10,13 @@ export const showAlert = message => {
 
 export const formatedAmount = amount => {
   return Math.abs(Number(amount)) >= 1.0e12
-    ? (Math.abs(Number(amount)) / 1.0e12).toFixed(2) + 'T'
+    ? (Math.abs(Number(amount)) / 1.0e12).toFixed(0) + 'T'
     : Math.abs(Number(amount)) >= 1.0e9
-    ? (Math.abs(Number(amount)) / 1.0e9).toFixed(2) + 'B'
+    ? (Math.abs(Number(amount)) / 1.0e9).toFixed(0) + 'B'
     : Math.abs(Number(amount)) >= 1.0e6
-    ? (Math.abs(Number(amount)) / 1.0e6).toFixed(2) + 'M'
+    ? (Math.abs(Number(amount)) / 1.0e6).toFixed(0) + 'M'
     : Math.abs(Number(amount)) >= 1.0e3
-    ? (Math.abs(Number(amount)) / 1.0e3).toFixed(2) + 'K'
+    ? (Math.abs(Number(amount)) / 1.0e3).toFixed(0) + 'K'
     : Math.abs(Number(amount));
 };
 
